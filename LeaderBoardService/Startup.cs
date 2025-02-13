@@ -57,7 +57,7 @@ public class Startup
 
         services.AddSingleton<IMessageBusConnection, RabbitMqMessageBusConnection>();
         services.AddSingleton<ISubscriber, RabbitMqSubscriber>();
-        services.AddSingleton<RabbitMqPublisher>();
+        services.AddSingleton<IPublisher, RabbitMqPublisher>();
 
         var channel = System.Threading.Channels.Channel.CreateBounded<Message>(100);
         services.AddSingleton(channel);

@@ -10,9 +10,9 @@ public class CustomerScoreEventMessageHandler : IMessageHandler<CustomerScoreEve
 {
     private readonly IDataRepository<Game> _gameRepository;
     private readonly ICustomerScoreRepository<CustomerScore> _customerScoreRepository;
-    private readonly RabbitMqPublisher _publisher;
+    private readonly IPublisher _publisher;
 
-    public CustomerScoreEventMessageHandler(IDataRepository<Game> gameRepository, ICustomerScoreRepository<CustomerScore> customerScoreRepository, RabbitMqPublisher publisher)
+    public CustomerScoreEventMessageHandler(IDataRepository<Game> gameRepository, ICustomerScoreRepository<CustomerScore> customerScoreRepository, IPublisher publisher)
     {
         _gameRepository = gameRepository;
         _customerScoreRepository = customerScoreRepository;
@@ -46,27 +46,7 @@ public class CustomerScoreEventMessageHandler : IMessageHandler<CustomerScoreEve
         {
             // looks like this is first customer score!!! hurray....
             // customer gets to leader board straight away
-            var leaders = new List<Leaders>()
-            {
-                new()
-                {
-                    CustomerId = @event.CustomerId,
-                    CustomerName = @event.CustomerName,
-                    Score = @event.Score,
-                    Rank = 1
-                }
-            };
-
-            customerGame.Leaders = JsonSerializer.SerializeToUtf8Bytes(leaders, JsonSerializerOptions.Default);
-
-            // broadcast leader board update
-            _publisher.Publish(new LeaderBoardEventMessage()
-            {
-                GameName = customerGame.GameName,
-                CustomerName = @event.CustomerName,
-                Score = @event.Score,
-                Rank = 1
-            });
+            await CreateLeaderAndPublish(@event, customerGame);
         }
         else
         {
@@ -91,34 +71,38 @@ public class CustomerScoreEventMessageHandler : IMessageHandler<CustomerScoreEve
 
                 if (isNewLeader || (leaders.Count < 20 && !isExistingLeader))
                 {
-                    leaders.Clear();
-                    var customerScores = await _customerScoreRepository.GetAllByGameIdAsync(@event.GameId, CancellationToken.None);
-
-                    var leads = customerScores.Count > 20
-                        ? customerScores.OrderByDescending(x => x.Score).ToList()[..20]
-                        : customerScores.OrderByDescending(x => x.Score).ToList();
-
-                    leaders.AddRange(leads.Select((lead, i) => new Leaders()
-                    {
-                        CustomerId = lead.CustomerId,
-                        CustomerName = lead.CustomerName,
-                        Score = lead.Score,
-                        Rank = i + 1
-                    }));
-
-                    customerGame.Leaders = JsonSerializer.SerializeToUtf8Bytes(leaders, JsonSerializerOptions.Default);
-
-                    // broadcast leader board change
-                    _publisher.Publish(new LeaderBoardEventMessage()
-                    {
-                        GameName = customerGame.GameName,
-                        CustomerName = @event.CustomerName,
-                        Score = @event.Score,
-                        Rank = leaders.First(x => x.CustomerId == @event.CustomerId).Rank
-                    });
+                    await CreateLeaderAndPublish(@event, customerGame);
                 }
             }
         }
         await _gameRepository.SaveChangesAsync(CancellationToken.None);
+    }
+
+    private async Task CreateLeaderAndPublish(CustomerScoreEventMessage @event, Game customerGame)
+    {
+        var customerScores = await _customerScoreRepository.GetAllByGameIdAsync(@event.GameId, CancellationToken.None);
+
+        var leads = customerScores.Count > 20
+            ? customerScores.OrderByDescending(x => x.Score).ToList()[..20]
+            : customerScores.OrderByDescending(x => x.Score).ToList();
+
+        var leaders = leads.Select((lead, i) => new Leaders()
+        {
+            CustomerId = lead.CustomerId,
+            CustomerName = lead.CustomerName,
+            Score = lead.Score,
+            Rank = i + 1
+        }).ToList();
+
+        customerGame.Leaders = JsonSerializer.SerializeToUtf8Bytes(leaders, JsonSerializerOptions.Default);
+
+        // broadcast leader board change
+        _publisher.Publish(new LeaderBoardEventMessage()
+        {
+            GameName = customerGame.GameName,
+            CustomerName = @event.CustomerName,
+            Score = @event.Score,
+            Rank = leaders.First(x => x.CustomerId == @event.CustomerId).Rank
+        });
     }
 }

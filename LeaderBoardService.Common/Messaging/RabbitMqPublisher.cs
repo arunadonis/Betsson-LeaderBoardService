@@ -5,7 +5,7 @@ using RabbitMQ.Client;
 
 namespace LeaderBoardService.Common.Messaging;
 
-public class RabbitMqPublisher : IDisposable
+public class RabbitMqPublisher : IPublisher, IDisposable
 {
     private readonly string _exchangeName;
 
