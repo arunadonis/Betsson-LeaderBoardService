@@ -8,7 +8,6 @@ public class LeaderBoardDbContext : DbContext
     public LeaderBoardDbContext(DbContextOptions options) : base(options) { }
     public DbSet<Game> Games { get; set; }
     public DbSet<CustomerScore> CustomerScores { get; set; }
-    public DbSet<LeaderBoard> LeaderBoards { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

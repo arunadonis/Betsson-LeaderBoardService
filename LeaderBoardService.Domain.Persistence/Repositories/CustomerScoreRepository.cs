@@ -1,4 +1,5 @@
-﻿using LeaderBoardService.Domain.Model;
+﻿using System;
+using LeaderBoardService.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace LeaderBoardService.Domain.Persistence.Repositories
@@ -25,6 +26,11 @@ namespace LeaderBoardService.Domain.Persistence.Repositories
         public async Task<CustomerScore> GetByGuidAsync(Guid guid, CancellationToken cancellationToken)
         {
             return await _leaderBoardDbContext.CustomerScores.FirstOrDefaultAsync(x => x.CustomerId == guid, cancellationToken);
+        }
+
+        public async Task<CustomerScore> GetByGameIdAsync(Guid customerId, Guid gameId, CancellationToken cancellationToken)
+        {
+            return await _leaderBoardDbContext.CustomerScores.FirstOrDefaultAsync(x => x.CustomerId == customerId && x.GameId == gameId, cancellationToken);
         }
 
         public async Task<List<CustomerScore>> GetAllByGameIdAsync(Guid gameId, CancellationToken cancellationToken)

@@ -44,7 +44,7 @@ namespace LeaderBoardService.Tests
 
             _gameRepository.Setup(x => x.GetByGuidAsync(_game.GameId, CancellationToken))
                 .ReturnsAsync(_game);
-            _customerScoreRepository.Setup(x => x.GetByGuidAsync(_customerScore.CustomerId, CancellationToken))
+            _customerScoreRepository.Setup(x => x.GetByGameIdAsync(_customerScore.CustomerId, _customerScore.GameId, CancellationToken))
                 .ReturnsAsync(_customerScore);
             _customerScoreRepository.Setup(x => x.GetAllByGameIdAsync(_game.GameId, CancellationToken))
                 .ReturnsAsync([_customerScore]);
@@ -72,7 +72,7 @@ namespace LeaderBoardService.Tests
             await _controller.Handle(_message);
 
             _gameRepository.Verify(x => x.GetByGuidAsync(_game.GameId, CancellationToken), Times.Once);
-            _customerScoreRepository.Verify(x => x.GetByGuidAsync(_customerScore.CustomerId, CancellationToken), Times.Once);
+            _customerScoreRepository.Verify(x => x.GetByGameIdAsync(_customerScore.CustomerId, _customerScore.GameId, CancellationToken), Times.Once);
             _customerScoreRepository.Verify(x => x.GetAllByGameIdAsync(_game.GameId, CancellationToken), Times.Once);
             _gameRepository.Verify(x => x.SaveChangesAsync(CancellationToken), Times.Once);
 
@@ -83,7 +83,7 @@ namespace LeaderBoardService.Tests
         [Fact]
         public async Task ItShouldAddCustomerToRepository()
         {
-            _customerScoreRepository.Setup(x => x.GetByGuidAsync(_customerScore.CustomerId, CancellationToken))
+            _customerScoreRepository.Setup(x => x.GetByGameIdAsync(_customerScore.CustomerId, _customerScore.GameId, CancellationToken))
                 .ReturnsAsync(() => (CustomerScore)null);
 
             await _controller.Handle(_message);

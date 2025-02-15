@@ -59,8 +59,8 @@ public class Startup
         services.AddSingleton<ISubscriber, RabbitMqSubscriber>();
         services.AddSingleton<IPublisher, RabbitMqPublisher>();
 
-        var channel = System.Threading.Channels.Channel.CreateBounded<Message>(100);
-        services.AddSingleton(channel);
+        //var channel = System.Threading.Channels.Channel.CreateBounded<Message>(100);
+        //services.AddSingleton(channel);
 
         services.AddHostedService<GameEventSubscriberWorker>();
         services.AddTransient<IMessageHandler<GameEventMessage>, GameEventMessageHandler>();

@@ -25,7 +25,7 @@ public class CustomerScoreEventMessageHandler : IMessageHandler<CustomerScoreEve
         if (customerGame == null)
             throw new InvalidOperationException($"Game not found for the given id {@event.GameId}");
 
-        var customerScore = await _customerScoreRepository.GetByGuidAsync(@event.CustomerId, CancellationToken.None);
+        var customerScore = await _customerScoreRepository.GetByGameIdAsync(@event.CustomerId, @event.GameId, CancellationToken.None);
         if (customerScore == null) // new customer score
         {
             await _customerScoreRepository.AddAsync(new CustomerScore
@@ -64,7 +64,7 @@ public class CustomerScoreEventMessageHandler : IMessageHandler<CustomerScoreEve
                     {
                         isExistingLeader = true;
                         // new high score?
-                        if (@event.Score <= customerScore.Score)
+                        if (@event.Score <= existingLeader.Score)
                             isNewLeader = false;
                     }
                 }
